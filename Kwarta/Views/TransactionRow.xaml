@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             x:Class="Kwarta.Views.TransactionRow"
+             x:DataType="vm:TransactionItem">
+
+    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="0,10">
+        <Border Style="{StaticResource IconBubble}" BackgroundColor="{Binding IconTint}">
+            <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" TextColor="{Binding IconColor}" />
+        </Border>
+
+        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+            <Label Text="{Binding CategoryName}" FontFamily="OpenSansSemibold" FontSize="15" />
+            <Label Text="{Binding Subtitle}" Style="{StaticResource Caption}" LineBreakMode="TailTruncation" />
+        </VerticalStackLayout>
+
+        <VerticalStackLayout Grid.Column="2" VerticalOptions="Center" Spacing="2">
+            <Label Text="{Binding AmountText}" TextColor="{Binding AmountColor}" Style="{StaticResource Amount}" />
+            <Label Text="{Binding DateText}" Style="{StaticResource Caption}" HorizontalTextAlignment="End" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

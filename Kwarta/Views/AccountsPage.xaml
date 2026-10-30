@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             x:Class="Kwarta.Views.AccountsPage"
+             x:DataType="vm:AccountsViewModel"
+             Shell.NavBarIsVisible="False"
+             Title="Accounts">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="20,20,20,110" Spacing="14" MaximumWidthRequest="720">
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Text="Accounts" Style="{StaticResource PageTitle}" />
+                    <Button Grid.Column="1" Text="Transfer" Style="{StaticResource SecondaryButton}"
+                            Command="{Binding TransferCommand}" VerticalOptions="Center"
+                            SemanticProperties.Description="Transfer between accounts" />
+                </Grid>
+
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Total balance" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding TotalText}" FontFamily="OpenSansSemibold" FontSize="32" />
+                        <Label Text="{Binding SummaryText}" Style="{StaticResource Caption}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Groups are nested BindableLayouts, not a grouped CollectionView (which crashes on Windows tab switches). -->
+                <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Groups}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AccountGroup">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto" Padding="4,6,4,0">
+                                    <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" Margin="0" />
+                                    <Label Grid.Column="1" Text="{Binding TotalText}" Style="{StaticResource Caption}"
+                                           VerticalTextAlignment="Center" />
+                                </Grid>
+                                <Border Style="{StaticResource Card}" Padding="16,4">
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Accounts}">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:AccountItem">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="0,10">
+                                                    <Grid.GestureRecognizers>
+                                                        <TapGestureRecognizer
+                                                            Command="{Binding EditAccountCommand, Source={RelativeSource AncestorType={x:Type vm:AccountsViewModel}}}"
+                                                            CommandParameter="{Binding .}" />
+                                                    </Grid.GestureRecognizers>
+                                                    <Border Style="{StaticResource IconBubble}" BackgroundColor="{Binding IconTint}">
+                                                        <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" TextColor="{Binding IconColor}" />
+                                                    </Border>
+                                                    <Label Grid.Column="1" Text="{Binding Name}" FontFamily="OpenSansSemibold"
+                                                           FontSize="15" VerticalTextAlignment="Center" />
+                                                    <Label Grid.Column="2" Text="{Binding BalanceText}" Style="{StaticResource Amount}"
+                                                           VerticalTextAlignment="Center">
+                                                        <Label.Triggers>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsNegative}" Value="True">
+                                                                <Setter Property="TextColor" Value="{StaticResource Expense}" />
+                                                            </DataTrigger>
+                                                        </Label.Triggers>
+                                                    </Label>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Button Style="{StaticResource Fab}" Command="{Binding AddAccountCommand}"
+                SemanticProperties.Description="Add account" />
+    </Grid>
+</ContentPage>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.MonthHeader"
+             x:DataType="vm:MonthViewModel">
+
+    <Border Style="{StaticResource Segment}">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+            <Button Text="{x:Static services:Icons.ChevronLeft}"
+                    Style="{StaticResource MonthNavButton}"
+                    Command="{Binding PreviousMonthCommand}"
+                    SemanticProperties.Description="Previous month" />
+            <Label Grid.Column="1"
+                   Text="{Binding MonthTitle}"
+                   FontFamily="OpenSansSemibold"
+                   FontSize="15"
+                   HorizontalTextAlignment="Center"
+                   VerticalTextAlignment="Center" />
+            <Button Grid.Column="2"
+                    Text="{x:Static services:Icons.ChevronRight}"
+                    Style="{StaticResource MonthNavButton}"
+                    Command="{Binding NextMonthCommand}"
+                    SemanticProperties.Description="Next month" />
+        </Grid>
+    </Border>
+</ContentView>

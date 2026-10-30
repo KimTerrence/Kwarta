@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Kwarta.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:Kwarta.Views"
+    xmlns:services="clr-namespace:Kwarta.Services"
+    Title="Kwarta">
+
+    <TabBar>
+        <ShellContent
+            Title="Overview"
+            Icon="{FontImageSource FontFamily=MaterialIcons, Glyph={x:Static services:Icons.Dashboard}}"
+            ContentTemplate="{DataTemplate views:DashboardPage}"
+            Route="dashboard" />
+        <ShellContent
+            Title="Transactions"
+            Icon="{FontImageSource FontFamily=MaterialIcons, Glyph={x:Static services:Icons.Receipt}}"
+            ContentTemplate="{DataTemplate views:TransactionsPage}"
+            Route="transactions" />
+        <ShellContent
+            Title="Accounts"
+            Icon="{FontImageSource FontFamily=MaterialIcons, Glyph={x:Static services:Icons.Wallet}}"
+            ContentTemplate="{DataTemplate views:AccountsPage}"
+            Route="accounts" />
+        <ShellContent
+            Title="Budgets"
+            Icon="{FontImageSource FontFamily=MaterialIcons, Glyph={x:Static services:Icons.PieChart}}"
+            ContentTemplate="{DataTemplate views:BudgetsPage}"
+            Route="budgets" />
+    </TabBar>
+
+</Shell>

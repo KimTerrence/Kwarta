@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:views="clr-namespace:Kwarta.Views"
+             x:Class="Kwarta.Views.BudgetRow"
+             x:DataType="vm:BudgetProgressItem">
+
+    <VerticalStackLayout Spacing="10">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+            <Border Style="{StaticResource IconBubble}" BackgroundColor="{Binding IconTint}">
+                <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" TextColor="{Binding IconColor}" />
+            </Border>
+            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" FontSize="15" />
+                <Label Text="{Binding SpentText}" Style="{StaticResource Caption}" />
+            </VerticalStackLayout>
+            <Label Grid.Column="2" Text="{Binding StatusText}" TextColor="{Binding StatusColor}"
+                   FontSize="12" FontFamily="OpenSansSemibold" VerticalTextAlignment="Center" />
+        </Grid>
+        <views:MeterBar Progress="{Binding Progress}" BarColor="{Binding BarColor}"
+                        IsVisible="{Binding HasBudget}" />
+    </VerticalStackLayout>
+</ContentView>

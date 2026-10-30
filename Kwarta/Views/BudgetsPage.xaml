@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:models="clr-namespace:Kwarta.Models"
+             xmlns:views="clr-namespace:Kwarta.Views"
+             x:Class="Kwarta.Views.BudgetsPage"
+             x:DataType="vm:BudgetsViewModel"
+             Shell.NavBarIsVisible="False"
+             Title="Budgets">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,20,20,32" Spacing="14" MaximumWidthRequest="720">
+
+            <Label Text="Budgets" Style="{StaticResource PageTitle}" />
+            <views:MonthHeader />
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Total monthly budget" Style="{StaticResource Caption}" />
+                    <Label Text="{Binding TotalBudgetText}" FontFamily="OpenSansSemibold" FontSize="32" />
+                    <views:MeterBar Progress="{Binding TotalProgress}" BarColor="{Binding TotalBarColor}" HeightRequest="10" />
+                    <Label Text="{Binding TotalSpentText}" Style="{StaticResource Caption}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout VerticalOptions="Center">
+                    <Label Text="Expense categories" Style="{StaticResource SectionTitle}" />
+                    <Label Text="Tap one to edit its budget, icon or color" Style="{StaticResource Caption}" Margin="4,0" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1" Text="+ New" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding AddExpenseCategoryCommand}" VerticalOptions="End" />
+            </Grid>
+
+            <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Budgets}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BudgetProgressItem">
+                        <Border Style="{StaticResource Card}" Padding="16">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding EditBudgetCommand, Source={RelativeSource AncestorType={x:Type vm:BudgetsViewModel}}}"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <views:BudgetRow />
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                <Label Text="Income categories" Style="{StaticResource SectionTitle}" VerticalOptions="Center" />
+                <Button Grid.Column="1" Text="+ New" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding AddIncomeCategoryCommand}" VerticalOptions="End" />
+            </Grid>
+
+            <FlexLayout Wrap="Wrap" BindableLayout.ItemsSource="{Binding IncomeCategories}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="models:Category">
+                        <Border Style="{StaticResource Card}" Padding="14,9" Margin="0,0,8,8" StrokeShape="RoundRectangle 18">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding EditIncomeCategoryCommand, Source={RelativeSource AncestorType={x:Type vm:BudgetsViewModel}}}"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="8">
+                                <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="18"
+                                       TextColor="{Binding Color}" />
+                                <Label Text="{Binding Name}" FontSize="14" VerticalTextAlignment="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </FlexLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

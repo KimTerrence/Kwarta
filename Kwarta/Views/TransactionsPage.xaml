@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:views="clr-namespace:Kwarta.Views"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.TransactionsPage"
+             x:DataType="vm:TransactionsViewModel"
+             Shell.NavBarIsVisible="False"
+             Title="Transactions">
+
+    <ContentPage.Resources>
+        <DataTemplate x:Key="DayHeaderTemplate" x:DataType="vm:TransactionDayHeader">
+            <Grid ColumnDefinitions="*,Auto" Padding="4,16,4,6">
+                <Label Text="{Binding Title}" FontFamily="OpenSansSemibold" FontSize="13"
+                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray300}}" />
+                <Label Grid.Column="1" Text="{Binding TotalText}" Style="{StaticResource Caption}" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="TransactionTemplate" x:DataType="vm:TransactionItem">
+            <SwipeView Padding="0,4" BackgroundColor="Transparent">
+                <SwipeView.RightItems>
+                    <SwipeItems>
+                        <SwipeItem Text="Delete"
+                                   BackgroundColor="{StaticResource Expense}"
+                                   IconImageSource="{FontImageSource FontFamily=MaterialIcons, Glyph={x:Static services:Icons.Delete}, Color=White}"
+                                   Command="{Binding DeleteTransactionCommand, Source={RelativeSource AncestorType={x:Type vm:TransactionsViewModel}}}"
+                                   CommandParameter="{Binding .}" />
+                    </SwipeItems>
+                </SwipeView.RightItems>
+
+                <!-- No shadow: SwipeView clips it to a rectangle on Android. -->
+                <Border Style="{StaticResource Card}" Padding="14,4" StrokeShape="RoundRectangle 18" Shadow="{x:Null}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+                            Command="{Binding EditTransactionCommand, Source={RelativeSource AncestorType={x:Type vm:TransactionsViewModel}}}"
+                            CommandParameter="{Binding .}" />
+                    </Border.GestureRecognizers>
+                    <views:TransactionRow />
+                </Border>
+            </SwipeView>
+        </DataTemplate>
+
+        <views:TransactionListTemplateSelector x:Key="RowTemplateSelector"
+                                               HeaderTemplate="{StaticResource DayHeaderTemplate}"
+                                               ItemTemplate="{StaticResource TransactionTemplate}" />
+    </ContentPage.Resources>
+
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="20,20,20,0" RowSpacing="12" MaximumWidthRequest="720">
+
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Transactions" Style="{StaticResource PageTitle}" />
+                <views:MonthHeader />
+            </VerticalStackLayout>
+
+            <Border Grid.Row="1" Style="{StaticResource Card}" Padding="6,0" StrokeShape="RoundRectangle 16">
+                <SearchBar Placeholder="Search category, account or note" Text="{Binding SearchText}" />
+            </Border>
+
+            <HorizontalStackLayout Grid.Row="2" Spacing="8">
+                <Button Text="All" Style="{StaticResource Chip}" Command="{Binding SetFilterCommand}" CommandParameter="All">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding SelectedFilter}" Value="All">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+                <Button Text="Expenses" Style="{StaticResource Chip}" Command="{Binding SetFilterCommand}" CommandParameter="Expenses">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding SelectedFilter}" Value="Expenses">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+                <Button Text="Income" Style="{StaticResource Chip}" Command="{Binding SetFilterCommand}" CommandParameter="Income">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding SelectedFilter}" Value="Income">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+                <Button Text="Transfers" Style="{StaticResource Chip}" Command="{Binding SetFilterCommand}" CommandParameter="Transfers">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding SelectedFilter}" Value="Transfers">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                            <Setter Property="TextColor" Value="White" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+            </HorizontalStackLayout>
+
+            <Label Grid.Row="3" Text="{Binding TotalText}" Style="{StaticResource Caption}" Margin="4,0" />
+
+            <CollectionView Grid.Row="4" ItemsSource="{Binding Rows}" SelectionMode="None"
+                            ItemTemplate="{StaticResource RowTemplateSelector}">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="0,48" Spacing="6" HorizontalOptions="Center">
+                        <Label Text="{x:Static services:Icons.Receipt}" Style="{StaticResource Icon}" FontSize="48"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}" />
+                        <Label Text="Nothing here yet" FontFamily="OpenSansSemibold" HorizontalOptions="Center" />
+                        <Label Text="Tap + to add a transaction." Style="{StaticResource Caption}" HorizontalOptions="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.Footer>
+                    <!-- Keeps the last row clear of the floating add button. -->
+                    <Grid HeightRequest="100" />
+                </CollectionView.Footer>
+            </CollectionView>
+        </Grid>
+
+        <Button Style="{StaticResource Fab}" Command="{Binding AddTransactionCommand}" />
+    </Grid>
+</ContentPage>

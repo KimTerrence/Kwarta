@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             x:Class="Kwarta.Views.ChoiceChip"
+             x:DataType="vm:ChipChoice"
+             Margin="0,0,8,8">
+
+    <Border StrokeThickness="0" StrokeShape="RoundRectangle 18" Padding="14,9"
+            BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}">
+        <Border.Triggers>
+            <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+            </DataTrigger>
+        </Border.Triggers>
+        <HorizontalStackLayout Spacing="8">
+            <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="18" TextColor="{Binding IconColor}">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+            <Label Text="{Binding Name}" FontSize="14" VerticalTextAlignment="Center">
+                <Label.Triggers>
+                    <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                        <Setter Property="TextColor" Value="White" />
+                    </DataTrigger>
+                </Label.Triggers>
+            </Label>
+        </HorizontalStackLayout>
+    </Border>
+</ContentView>
