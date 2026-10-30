@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Launch animation, layered over the Overview so the app loads underneath it. Starts on the native
+    splash screen's last frame: same color, logo at the same 100x109 size.
+-->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Kwarta.Views.SplashOverlay"
+             BackgroundColor="#25543D">
+
+    <Image x:Name="Logo" Source="kwarta_logo.png" WidthRequest="100" HeightRequest="109"
+           HorizontalOptions="Center" VerticalOptions="Center"
+           SemanticProperties.Description="Kwarta" />
+</ContentView>

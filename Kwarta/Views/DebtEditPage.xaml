@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:views="clr-namespace:Kwarta.Views"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.DebtEditPage"
+             x:DataType="vm:DebtEditViewModel"
+             Shell.TabBarIsVisible="False"
+             Title="{Binding Title}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,12,20,32" Spacing="18" MaximumWidthRequest="560">
+
+            <views:PillGroupView BindingContext="{Binding Direction}" />
+
+            <Border Style="{StaticResource Card}" Padding="18,6">
+                <VerticalStackLayout>
+                    <Entry Text="{Binding Person}" Placeholder="Who? e.g. Juan" MaxLength="40" />
+                    <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <Label Text="{Binding CurrencySymbol}" VerticalTextAlignment="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Entry Grid.Column="1" Text="{Binding AmountText}" Keyboard="Numeric" Placeholder="Amount" />
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <Label Text="{Binding CurrencySymbol}" VerticalTextAlignment="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray400}}" />
+                        <Entry Grid.Column="1" Text="{Binding PaidText}" Keyboard="Numeric" Placeholder="Paid back so far (optional)" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Padding="18,6">
+                <VerticalStackLayout>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="0,6">
+                        <Label Text="{x:Static services:Icons.Calendar}" Style="{StaticResource Icon}" TextColor="{StaticResource Primary}" />
+                        <DatePicker Grid.Column="1" Date="{Binding Date}" Format="dddd, MMMM d, yyyy" />
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="0,6">
+                        <Label Text="{x:Static services:Icons.EditNote}" Style="{StaticResource Icon}" TextColor="{StaticResource Primary}" />
+                        <Entry Grid.Column="1" Text="{Binding Note}" Placeholder="Add a note (optional)" MaxLength="120" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="{Binding ErrorText}" TextColor="{StaticResource Expense}" IsVisible="{Binding HasError}"
+                   HorizontalOptions="Center" />
+
+            <Button Text="Save" Command="{Binding SaveCommand}" HeightRequest="54"
+                    FontFamily="OpenSansSemibold" FontSize="16" CornerRadius="18" />
+            <Button Text="Record a payment" Command="{Binding RecordPaymentCommand}" IsVisible="{Binding CanRecordPayment}"
+                    Style="{StaticResource SecondaryButton}" HeightRequest="48" />
+            <Button Text="Delete" Command="{Binding DeleteCommand}" IsVisible="{Binding IsExisting}"
+                    BackgroundColor="Transparent" TextColor="{StaticResource Expense}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

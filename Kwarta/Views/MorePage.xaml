@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.MorePage"
+             x:DataType="vm:MoreViewModel"
+             Shell.NavBarIsVisible="False"
+             Title="More">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,20,20,32" Spacing="14" MaximumWidthRequest="720">
+
+            <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Sections}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MoreSection">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" Margin="4,6,0,0" />
+                            <Border Style="{StaticResource Card}" Padding="16,4">
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Rows}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:MoreRow">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="0,10"
+                                                  SemanticProperties.Description="{Binding Title}">
+                                                <Grid.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Command="{Binding OpenCommand, Source={RelativeSource AncestorType={x:Type vm:MoreViewModel}}}"
+                                                        CommandParameter="{Binding .}" />
+                                                </Grid.GestureRecognizers>
+                                                <Border Style="{StaticResource IconBubble}" BackgroundColor="{Binding Tint}">
+                                                    <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" TextColor="{Binding Color}" />
+                                                </Border>
+                                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                                    <Label Text="{Binding Title}" FontFamily="OpenSansSemibold" FontSize="15" />
+                                                    <Label Text="{Binding Subtitle}" Style="{StaticResource Caption}" />
+                                                </VerticalStackLayout>
+                                                <Label Grid.Column="2" Text="{x:Static services:Icons.ChevronRight}" Style="{StaticResource Icon}"
+                                                       TextColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </Border>
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.DebtsPage"
+             x:DataType="vm:DebtsViewModel"
+             Shell.TabBarIsVisible="False"
+             Title="Utang">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="20,12,20,110" Spacing="14" MaximumWidthRequest="720">
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Border Style="{StaticResource Card}" Padding="16,14">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Owed to you" Style="{StaticResource Caption}" />
+                            <Label Text="{Binding OwedToYouText}" FontFamily="OpenSansSemibold" FontSize="20"
+                                   TextColor="{StaticResource Income}" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Padding="16,14">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="You owe" Style="{StaticResource Caption}" />
+                            <Label Text="{Binding YouOweText}" FontFamily="OpenSansSemibold" FontSize="20"
+                                   TextColor="{StaticResource Expense}" LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+                <Label Text="Utang is tracked on its own and doesn't change your account balances."
+                       Style="{StaticResource Caption}" Margin="4,-4,4,0" />
+
+                <VerticalStackLayout Padding="0,40" Spacing="6" IsVisible="{Binding IsEmpty}">
+                    <Label Text="{x:Static services:Icons.Handshake}" Style="{StaticResource Icon}" FontSize="48"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}" />
+                    <Label Text="No utang recorded" FontFamily="OpenSansSemibold" HorizontalOptions="Center" />
+                    <Label Text="Keep track of money you lent or borrowed." Style="{StaticResource Caption}"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Groups}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DebtGroup">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto" Padding="4,6,4,0">
+                                    <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" Margin="0" />
+                                    <Label Grid.Column="1" Text="{Binding TotalText}" Style="{StaticResource Caption}"
+                                           VerticalTextAlignment="Center" />
+                                </Grid>
+                                <Border Style="{StaticResource Card}" Padding="16,4">
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:DebtItem">
+                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="0,10">
+                                                    <Grid.GestureRecognizers>
+                                                        <TapGestureRecognizer
+                                                            Command="{Binding OpenCommand, Source={RelativeSource AncestorType={x:Type vm:DebtsViewModel}}}"
+                                                            CommandParameter="{Binding .}" />
+                                                    </Grid.GestureRecognizers>
+                                                    <Border Style="{StaticResource IconBubble}" StrokeShape="RoundRectangle 22"
+                                                            BackgroundColor="{Binding Tint}">
+                                                        <Label Text="{Binding Initial}" FontFamily="OpenSansSemibold" FontSize="18"
+                                                               TextColor="{Binding Color}" HorizontalOptions="Center" VerticalOptions="Center" />
+                                                    </Border>
+                                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                                        <Label Text="{Binding Person}" FontFamily="OpenSansSemibold" FontSize="15" />
+                                                        <Label Text="{Binding DetailText}" Style="{StaticResource Caption}"
+                                                               LineBreakMode="TailTruncation" />
+                                                    </VerticalStackLayout>
+                                                    <Label Grid.Column="2" Text="{Binding AmountText}" Style="{StaticResource Amount}"
+                                                           TextColor="{Binding Color}" VerticalTextAlignment="Center" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </VerticalStackLayout>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Button Style="{StaticResource Fab}" Command="{Binding AddCommand}" SemanticProperties.Description="Add utang" />
+    </Grid>
+</ContentPage>

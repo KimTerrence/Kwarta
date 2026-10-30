@@ -1,9 +1,10 @@
+using System.Text.Json.Serialization;
 using Kwarta.Services;
 using SQLite;
 
 namespace Kwarta.Models;
 
-public class Category
+public class Category : IEntity
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
@@ -21,14 +22,20 @@ public class Category
     /// <summary>Monthly spending limit. Zero means no budget is set.</summary>
     public decimal MonthlyBudget { get; set; }
 
-    [Ignore]
+    /// <summary>
+    /// First month whose unspent budget carries into the next, or null when rollover is off.
+    /// See <see cref="BudgetMath.Carryover"/>.
+    /// </summary>
+    public DateTime? RolloverSince { get; set; }
+
+    [Ignore, JsonIgnore]
     public string Glyph => Icons.CategoryGlyph(Icon);
 
-    [Ignore]
+    [Ignore, JsonIgnore]
     public Color Color => Color.FromArgb(ColorHex);
 
     /// <summary>Light tint of <see cref="Color"/> used behind the icon.</summary>
-    [Ignore]
+    [Ignore, JsonIgnore]
     public Color Tint => Color.WithAlpha(0.16f);
 
     public override string ToString() => Name;

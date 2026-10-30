@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.RecurringPage"
+             x:DataType="vm:RecurringListViewModel"
+             Shell.TabBarIsVisible="False"
+             Title="Recurring &amp; bills">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="20,12,20,110" Spacing="14" MaximumWidthRequest="720">
+
+                <Label Text="{Binding MonthlyTotalText}" Style="{StaticResource Caption}" Margin="4,0"
+                       IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBool}}" />
+
+                <VerticalStackLayout Padding="0,48" Spacing="6" IsVisible="{Binding IsEmpty}">
+                    <Label Text="{x:Static services:Icons.EventRepeat}" Style="{StaticResource Icon}" FontSize="48"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}" />
+                    <Label Text="Nothing scheduled" FontFamily="OpenSansSemibold" HorizontalOptions="Center" />
+                    <Label Text="Add rent, salary, bills and subscriptions. Kwarta records them on schedule or reminds you when they're due."
+                           Style="{StaticResource Caption}" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding Items}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RecurringItem">
+                            <Border Style="{StaticResource Card}" Padding="14,4" StrokeShape="RoundRectangle 18">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding OpenCommand, Source={RelativeSource AncestorType={x:Type vm:RecurringListViewModel}}}"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="0,10">
+                                    <Border Style="{StaticResource IconBubble}" BackgroundColor="{Binding IconTint}">
+                                        <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" TextColor="{Binding IconColor}" />
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                        <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" FontSize="15" />
+                                        <Label Text="{Binding DetailText}" Style="{StaticResource Caption}" />
+                                        <Label Text="{Binding DueText}" FontSize="12" TextColor="{Binding DueColor}" />
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="2" Text="{Binding AmountText}" Style="{StaticResource Amount}"
+                                           TextColor="{Binding AmountColor}" VerticalTextAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Button Style="{StaticResource Fab}" Command="{Binding AddCommand}"
+                SemanticProperties.Description="Add recurring transaction" />
+    </Grid>
+</ContentPage>

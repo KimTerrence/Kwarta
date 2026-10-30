@@ -21,6 +21,10 @@ public partial class TransactionsViewModel(BudgetDatabase database) : MonthViewM
     [ObservableProperty]
     public partial bool IsEmpty { get; set; }
 
+    /// <summary>Show every month instead of the selected one, so a search covers all transactions.</summary>
+    [ObservableProperty]
+    public partial bool IsAllMonths { get; set; }
+
     /// <summary>
     /// Day headers interleaved with their transactions. A flat list is used instead of a grouped
     /// CollectionView, which crashes on Windows when switching Shell tabs.
@@ -34,11 +38,20 @@ public partial class TransactionsViewModel(BudgetDatabase database) : MonthViewM
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
+    [RelayCommand]
+    Task ToggleAllMonths()
+    {
+        IsAllMonths = !IsAllMonths;
+        return LoadAsync();
+    }
+
     protected override async Task LoadMonthAsync()
     {
         var categories = (await database.GetCategoriesAsync()).ToDictionary(c => c.Id);
         var accounts = (await database.GetAccountsAsync()).ToDictionary(a => a.Id);
-        var transactions = await database.GetTransactionsAsync(Month, MonthEnd);
+        var transactions = IsAllMonths
+            ? (await database.GetAllTransactionsAsync()).OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).ToList()
+            : await database.GetTransactionsAsync(Month, MonthEnd);
         _items = transactions.Select(t => new TransactionItem(t, categories.GetValueOrDefault(t.CategoryId),
             accounts.GetValueOrDefault(t.AccountId), accounts.GetValueOrDefault(t.ToAccountId))).ToList();
         ApplyFilter();

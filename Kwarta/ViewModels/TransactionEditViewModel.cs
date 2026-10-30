@@ -6,15 +6,45 @@ using Kwarta.Services;
 
 namespace Kwarta.ViewModels;
 
-public partial class TransactionEditViewModel(BudgetDatabase database) : ObservableObject, IQueryAttributable
+/// <summary>What the transaction editor is filling in.</summary>
+public enum EditorMode
+{
+    Transaction,
+
+    /// <summary>A <see cref="TransactionTemplate"/> for quick add; it has no date.</summary>
+    Template,
+
+    /// <summary>A <see cref="RecurringTransaction"/>; the date is its next occurrence.</summary>
+    Recurring
+}
+
+/// <summary>
+/// Edits a transaction, quick-add template or recurring transaction. Query parameters: "mode" (<see cref="EditorMode"/>),
+/// "id", "type" (<see cref="TransactionType"/> for a new one) and "recordRecurringId" (record a due bill as a transaction).
+/// </summary>
+public partial class TransactionEditViewModel(BudgetDatabase database, RecurringService recurringService)
+    : ObservableObject, IQueryAttributable
 {
     const string LastAccountKey = "LastAccountId";
     const string LastToAccountKey = "LastToAccountId";
 
     Transaction _transaction = new();
+    TransactionTemplate _template = new();
+    RecurringTransaction _recurring = new();
+
+    /// <summary>The recurring transaction whose due occurrence is being recorded, if any.</summary>
+    RecurringTransaction? _recordFrom;
 
     /// <summary>Which type the chips in <see cref="Categories"/> belong to.</summary>
     TransactionType _categoriesType;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(IsRecurring))]
+    [NotifyPropertyChangedFor(nameof(HasDate))]
+    [NotifyPropertyChangedFor(nameof(DeleteText))]
+    [NotifyPropertyChangedFor(nameof(NotePlaceholder))]
+    public partial EditorMode Mode { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsExpense))]
@@ -36,6 +66,7 @@ public partial class TransactionEditViewModel(BudgetDatabase database) : Observa
     public partial int SelectedToAccountId { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ScheduleText))]
     public partial DateTime Date { get; set; } = DateTime.Today;
 
     [ObservableProperty]
@@ -46,16 +77,63 @@ public partial class TransactionEditViewModel(BudgetDatabase database) : Observa
     public partial bool IsExisting { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
+    public partial bool IsRecording { get; set; }
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string ErrorText { get; set; } = string.Empty;
+
+    /// <summary>Record each occurrence automatically (recurring only).</summary>
+    [ObservableProperty]
+    public partial bool AutoAdd { get; set; } = true;
+
+    public PillGroup Frequency { get; } = new(
+        (nameof(RecurringFrequency.Weekly), "Weekly"),
+        (nameof(RecurringFrequency.Monthly), "Monthly"),
+        (nameof(RecurringFrequency.Yearly), "Yearly"));
+
+    /// <summary>Days before the due date to send a reminder; the key is <see cref="RecurringTransaction.RemindDaysBefore"/>.</summary>
+    public PillGroup Reminder { get; } = new(
+        ("-1", "No reminder"),
+        ("0", "On the day"),
+        ("1", "1 day before"),
+        ("3", "3 days before"));
 
     public bool IsExpense => Type == TransactionType.Expense;
     public bool IsIncome => Type == TransactionType.Income;
     public bool IsTransfer => Type == TransactionType.Transfer;
+    public bool IsRecurring => Mode == EditorMode.Recurring;
+    public bool HasDate => Mode != EditorMode.Template;
     public bool HasError => !string.IsNullOrEmpty(ErrorText);
-    public string Title => IsExisting ? "Edit Transaction" : "New Transaction";
+    public bool AreRemindersSupported => Reminders.IsSupported;
     public string AccountLabel => IsTransfer ? "From account" : "Account";
     public string CurrencySymbol => Money.Symbol;
+    public string ScheduleText => Recurrence.Describe(SelectedFrequency, Date);
+
+    public string NotePlaceholder => Mode == EditorMode.Transaction
+        ? "Add a note (optional)"
+        : "Name, e.g. Meralco or Jeep fare (optional)";
+
+    public string Title => (Mode, IsExisting) switch
+    {
+        (EditorMode.Template, false) => "New Quick-add",
+        (EditorMode.Template, true) => "Edit Quick-add",
+        (EditorMode.Recurring, false) => "New Recurring",
+        (EditorMode.Recurring, true) => "Edit Recurring",
+        _ when IsRecording => "Record Bill",
+        (_, false) => "New Transaction",
+        (_, true) => "Edit Transaction",
+    };
+
+    public string DeleteText => Mode switch
+    {
+        EditorMode.Template => "Delete quick-add",
+        EditorMode.Recurring => "Delete recurring transaction",
+        _ => "Delete transaction",
+    };
+
+    RecurringFrequency SelectedFrequency => Enum.Parse<RecurringFrequency>(Frequency.SelectedKey);
 
     public ObservableCollection<ChipChoice> Categories { get; } = [];
 
@@ -66,24 +144,57 @@ public partial class TransactionEditViewModel(BudgetDatabase database) : Observa
 
     public async void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        if (query.TryGetValue("id", out var value) && value is int id
-            && await database.GetTransactionAsync(id) is { } existing)
+        Frequency.PropertyChanged += (_, _) => OnPropertyChanged(nameof(ScheduleText));
+        Frequency.SelectedKey = nameof(RecurringFrequency.Monthly);
+
+        if (query.TryGetValue("mode", out var modeValue) && modeValue is EditorMode mode)
+            Mode = mode;
+        var id = query.TryGetValue("id", out var idValue) && idValue is int i ? i : 0;
+
+        // The row whose fields fill the form, when editing or recording.
+        ITransactionFields? source = null;
+        switch (Mode)
         {
-            _transaction = existing;
-            IsExisting = true;
-            Type = existing.Type;
-            AmountText = existing.Amount.ToString("0.##");
-            Date = existing.Date;
-            Note = existing.Note;
+            case EditorMode.Template when await database.GetAsync<TransactionTemplate>(id) is { } template:
+                source = _template = template;
+                break;
+
+            case EditorMode.Recurring when await database.GetAsync<RecurringTransaction>(id) is { } recurring:
+                source = _recurring = recurring;
+                Date = recurring.NextDate;
+                Frequency.SelectedKey = recurring.Frequency.ToString();
+                AutoAdd = recurring.AutoAdd;
+                Reminder.SelectedKey = recurring.RemindDaysBefore.ToString();
+                break;
+
+            case EditorMode.Transaction when await database.GetTransactionAsync(id) is { } existing:
+                source = _transaction = existing;
+                Date = existing.Date;
+                break;
+
+            case EditorMode.Transaction when query.TryGetValue("recordRecurringId", out var recordValue)
+                && recordValue is int recordId && await database.GetAsync<RecurringTransaction>(recordId) is { } due:
+                source = _recordFrom = due;
+                Date = due.NextDate;
+                IsRecording = true;
+                break;
+        }
+
+        if (source is not null)
+        {
+            IsExisting = !IsRecording;
+            Type = source.Type;
+            AmountText = source.Amount.ToString("0.##");
+            Note = source.Note;
         }
         else if (query.TryGetValue("type", out var typeValue) && typeValue is TransactionType type)
             Type = type;
 
         // A transfer has no category; keep expense categories ready in case the type is switched.
-        await LoadCategoriesAsync(IsTransfer ? TransactionType.Expense : Type, _transaction.CategoryId);
+        await LoadCategoriesAsync(IsTransfer ? TransactionType.Expense : Type, source?.CategoryId ?? 0);
         await LoadAccountsAsync(
-            IsExisting ? _transaction.AccountId : Preferences.Default.Get(LastAccountKey, 0),
-            IsExisting && IsTransfer ? _transaction.ToAccountId : Preferences.Default.Get(LastToAccountKey, 0));
+            source?.AccountId ?? Preferences.Default.Get(LastAccountKey, 0),
+            source is not null && IsTransfer ? source.ToAccountId : Preferences.Default.Get(LastToAccountKey, 0));
     }
 
     async Task LoadCategoriesAsync(TransactionType type, int selectedId)
@@ -195,19 +306,62 @@ public partial class TransactionEditViewModel(BudgetDatabase database) : Observa
         }
 
         ErrorText = string.Empty;
-        _transaction.Amount = Math.Round(amount, 2);
-        _transaction.Type = Type;
-        _transaction.CategoryId = IsTransfer ? 0 : SelectedCategoryId;
-        _transaction.AccountId = SelectedAccountId;
-        _transaction.ToAccountId = IsTransfer ? SelectedToAccountId : 0;
-        _transaction.Date = Date.Date;
-        _transaction.Note = Note.Trim();
+        ITransactionFields target = Mode switch
+        {
+            EditorMode.Template => _template,
+            EditorMode.Recurring => _recurring,
+            _ => _transaction,
+        };
+        target.Amount = Math.Round(amount, 2);
+        target.Type = Type;
+        target.CategoryId = IsTransfer ? 0 : SelectedCategoryId;
+        target.AccountId = SelectedAccountId;
+        target.ToAccountId = IsTransfer ? SelectedToAccountId : 0;
+        target.Note = Note.Trim();
 
-        await database.SaveTransactionAsync(_transaction);
+        switch (Mode)
+        {
+            case EditorMode.Template:
+                await database.SaveAsync(_template);
+                break;
+
+            case EditorMode.Recurring:
+                await SaveRecurringAsync();
+                break;
+
+            default:
+                _transaction.Date = Date.Date;
+                await database.SaveTransactionAsync(_transaction);
+                if (_recordFrom is not null)
+                    await recurringService.AdvanceAsync(_recordFrom);
+                break;
+        }
+
         Preferences.Default.Set(LastAccountKey, SelectedAccountId);
         if (IsTransfer)
             Preferences.Default.Set(LastToAccountKey, SelectedToAccountId);
         await Shell.Current.GoToAsync("..");
+    }
+
+    async Task SaveRecurringAsync()
+    {
+        var frequency = SelectedFrequency;
+
+        // Keep the original start (so a schedule on the 31st stays at month end) unless the schedule changed.
+        if (!IsExisting || _recurring.NextDate.Date != Date.Date || _recurring.Frequency != frequency)
+            _recurring.StartDate = _recurring.NextDate = Date.Date;
+        _recurring.Frequency = frequency;
+        _recurring.AutoAdd = AutoAdd;
+        _recurring.RemindDaysBefore = Reminders.IsSupported ? int.Parse(Reminder.SelectedKey) : RecurringTransaction.NoReminder;
+
+        if (_recurring.RemindDaysBefore != RecurringTransaction.NoReminder && !await Reminders.RequestPermissionAsync())
+            await Shell.Current.DisplayAlertAsync("Notifications are off",
+                "Allow notifications for Kwarta in Settings to get bill reminders.", "OK");
+
+        await database.SaveAsync(_recurring);
+
+        // Records it now if it is already due, and schedules its reminder.
+        await recurringService.ProcessDueAsync();
     }
 
     [RelayCommand]
@@ -216,10 +370,32 @@ public partial class TransactionEditViewModel(BudgetDatabase database) : Observa
         if (!IsExisting)
             return;
 
-        if (!await Shell.Current.DisplayAlertAsync("Delete transaction", "Delete this transaction?", "Delete", "Cancel"))
+        var what = Mode switch
+        {
+            EditorMode.Template => "quick-add",
+            EditorMode.Recurring => "recurring transaction",
+            _ => "transaction",
+        };
+        var detail = Mode == EditorMode.Recurring ? " Transactions it already added are kept." : string.Empty;
+        if (!await Shell.Current.DisplayAlertAsync($"Delete {what}", $"Delete this {what}?{detail}", "Delete", "Cancel"))
             return;
 
-        await database.DeleteTransactionAsync(_transaction);
+        switch (Mode)
+        {
+            case EditorMode.Template:
+                await database.DeleteAsync(_template);
+                break;
+
+            case EditorMode.Recurring:
+                await database.DeleteAsync(_recurring);
+                await recurringService.ScheduleRemindersAsync();
+                break;
+
+            default:
+                await database.DeleteTransactionAsync(_transaction);
+                break;
+        }
+
         await Shell.Current.GoToAsync("..");
     }
 }

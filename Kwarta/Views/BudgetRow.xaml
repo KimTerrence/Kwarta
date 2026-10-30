@@ -14,6 +14,8 @@
             <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
                 <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" FontSize="15" />
                 <Label Text="{Binding SpentText}" Style="{StaticResource Caption}" />
+                <Label Text="{Binding CarryoverText}" Style="{StaticResource Caption}" IsVisible="{Binding HasCarryover}"
+                       TextColor="{StaticResource Income}" />
             </VerticalStackLayout>
             <Label Grid.Column="2" Text="{Binding StatusText}" TextColor="{Binding StatusColor}"
                    FontSize="12" FontFamily="OpenSansSemibold" VerticalTextAlignment="Center" />

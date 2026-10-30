@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.TemplatesPage"
+             x:DataType="vm:TemplatesViewModel"
+             Shell.TabBarIsVisible="False"
+             Title="Quick add">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="20,12,20,110" Spacing="14" MaximumWidthRequest="720">
+
+                <Label Text="Tap a quick-add on the Overview to record it for today in one step."
+                       Style="{StaticResource Caption}" Margin="4,0" />
+
+                <VerticalStackLayout Padding="0,48" Spacing="6" IsVisible="{Binding IsEmpty}">
+                    <Label Text="{x:Static services:Icons.Bolt}" Style="{StaticResource Icon}" FontSize="48"
+                           TextColor="{AppThemeBinding Light={StaticResource Gray300}, Dark={StaticResource Gray500}}" />
+                    <Label Text="No quick-adds yet" FontFamily="OpenSansSemibold" HorizontalOptions="Center" />
+                    <Label Text="Save entries you make often, like jeep fare or coffee." Style="{StaticResource Caption}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <Border Style="{StaticResource Card}" Padding="16,4" IsVisible="{Binding IsEmpty, Converter={StaticResource InvertedBool}}">
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TemplateItem">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14" Padding="0,10">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding OpenCommand, Source={RelativeSource AncestorType={x:Type vm:TemplatesViewModel}}}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                    <Border Style="{StaticResource IconBubble}" BackgroundColor="{Binding IconTint}">
+                                        <Label Text="{Binding Glyph}" Style="{StaticResource Icon}" TextColor="{Binding IconColor}" />
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                        <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" FontSize="15" />
+                                        <Label Text="{Binding AccountText}" Style="{StaticResource Caption}" />
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="2" Text="{Binding AmountText}" Style="{StaticResource Amount}"
+                                           VerticalTextAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Button Style="{StaticResource Fab}" Command="{Binding AddCommand}" SemanticProperties.Description="Add quick-add" />
+    </Grid>
+</ContentPage>

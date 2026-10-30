@@ -21,6 +21,19 @@
                        HorizontalOptions="Center" />
             </VerticalStackLayout>
 
+            <!-- Current balance (existing accounts) -->
+            <Border Style="{StaticResource Card}" Padding="18,12" IsVisible="{Binding IsExisting}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout VerticalOptions="Center">
+                        <Label Text="Current balance" Style="{StaticResource Caption}" />
+                        <Label Text="{Binding BalanceText}" FontFamily="OpenSansSemibold" FontSize="20" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1" Text="Adjust" Style="{StaticResource SecondaryButton}" VerticalOptions="Center"
+                            Command="{Binding AdjustBalanceCommand}"
+                            SemanticProperties.Description="Correct the balance to match your real balance" />
+                </Grid>
+            </Border>
+
             <!-- Type -->
             <Border Style="{StaticResource Segment}">
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="4">

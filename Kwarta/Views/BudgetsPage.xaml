@@ -12,7 +12,6 @@
     <ScrollView>
         <VerticalStackLayout Padding="20,20,20,32" Spacing="14" MaximumWidthRequest="720">
 
-            <Label Text="Budgets" Style="{StaticResource PageTitle}" />
             <views:MonthHeader />
 
             <Border Style="{StaticResource Card}">

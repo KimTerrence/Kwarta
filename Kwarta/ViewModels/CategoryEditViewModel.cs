@@ -25,6 +25,9 @@ public partial class CategoryEditViewModel(BudgetDatabase database) : Observable
     public partial string BudgetText { get; set; } = string.Empty;
 
     [ObservableProperty]
+    public partial bool Rollover { get; set; }
+
+    [ObservableProperty]
     public partial string Glyph { get; set; } = Icons.CategoryGlyph(null);
 
     [ObservableProperty]
@@ -69,6 +72,7 @@ public partial class CategoryEditViewModel(BudgetDatabase database) : Observable
         Type = _category.Type;
         Name = _category.Name;
         BudgetText = _category.MonthlyBudget > 0 ? _category.MonthlyBudget.ToString("0.##") : string.Empty;
+        Rollover = _category.RolloverSince is not null;
         SelectIcon(IconOptions.FirstOrDefault(o => o.Key == _category.Icon) ?? IconOptions[0]);
         SelectColor(ColorOptions.FirstOrDefault(o => o.Key.Equals(_category.ColorHex, StringComparison.OrdinalIgnoreCase))
             ?? ColorOptions[0]);
@@ -111,6 +115,9 @@ public partial class CategoryEditViewModel(BudgetDatabase database) : Observable
         _category.Icon = IconOptions.First(o => o.IsSelected).Key;
         _category.ColorHex = ColorOptions.First(o => o.IsSelected).Key;
         _category.MonthlyBudget = Math.Round(budget, 2);
+        // Rollover counts from the month it was turned on; turning it off forgets the carried amount.
+        _category.RolloverSince = !IsExpense || !Rollover || budget <= 0 ? null
+            : _category.RolloverSince ?? BudgetMath.FirstOfMonth(DateTime.Today);
 
         await database.SaveCategoryAsync(_category);
         await Shell.Current.GoToAsync("..");

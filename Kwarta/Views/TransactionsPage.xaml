@@ -50,16 +50,14 @@
     <Grid>
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Padding="20,20,20,0" RowSpacing="12" MaximumWidthRequest="720">
 
-            <VerticalStackLayout Spacing="12">
-                <Label Text="Transactions" Style="{StaticResource PageTitle}" />
-                <views:MonthHeader />
-            </VerticalStackLayout>
+            <views:MonthHeader IsVisible="{Binding IsAllMonths, Converter={StaticResource InvertedBool}}" />
 
             <Border Grid.Row="1" Style="{StaticResource Card}" Padding="6,0" StrokeShape="RoundRectangle 16">
                 <SearchBar Placeholder="Search category, account or note" Text="{Binding SearchText}" />
             </Border>
 
-            <HorizontalStackLayout Grid.Row="2" Spacing="8">
+            <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+            <HorizontalStackLayout Spacing="8">
                 <Button Text="All" Style="{StaticResource Chip}" Command="{Binding SetFilterCommand}" CommandParameter="All">
                     <Button.Triggers>
                         <DataTrigger TargetType="Button" Binding="{Binding SelectedFilter}" Value="All">
@@ -92,7 +90,17 @@
                         </DataTrigger>
                     </Button.Triggers>
                 </Button>
+                <Button Text="All months" Style="{StaticResource Chip}" Command="{Binding ToggleAllMonthsCommand}"
+                        SemanticProperties.Description="Show and search transactions from every month">
+                    <Button.Triggers>
+                        <DataTrigger TargetType="Button" Binding="{Binding IsAllMonths}" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource Tertiary}" />
+                            <Setter Property="TextColor" Value="White" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
             </HorizontalStackLayout>
+            </ScrollView>
 
             <Label Grid.Row="3" Text="{Binding TotalText}" Style="{StaticResource Caption}" Margin="4,0" />
 

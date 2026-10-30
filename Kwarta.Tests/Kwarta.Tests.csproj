@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- Models use Color and SQLite attributes. -->
+    <PackageReference Include="Microsoft.Maui.Graphics" Version="10.0.20" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+  </ItemGroup>
+
+  <!--
+    The app targets only platform frameworks, so it can't be referenced from a plain net10.0 test project.
+    Its platform-independent code is compiled in here instead.
+  -->
+  <ItemGroup>
+    <Compile Include="..\Kwarta\Models\*.cs" Link="App\Models\%(Filename)%(Extension)" />
+    <Compile Include="..\Kwarta\Services\BackupFile.cs;..\Kwarta\Services\BudgetMath.cs;..\Kwarta\Services\Csv.cs;..\Kwarta\Services\Icons.cs;..\Kwarta\Services\Money.cs;..\Kwarta\Services\Recurrence.cs"
+             Link="App\Services\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Microsoft.Maui.Graphics" />
+  </ItemGroup>
+
+</Project>
