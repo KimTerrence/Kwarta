@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ customizes this in values-v31; older versions use MAUI's splash as-is. -->
+    <style name="Kwarta.SplashTheme" parent="Maui.SplashTheme" />
+</resources>

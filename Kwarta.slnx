@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="Kwarta.Tests/Kwarta.Tests.csproj" />
   <Project Path="Kwarta/Kwarta.csproj" />
 </Solution>

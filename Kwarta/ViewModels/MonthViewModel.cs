@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kwarta.Services;
 using Kwarta.Views;
 
 namespace Kwarta.ViewModels;
@@ -56,7 +57,24 @@ public abstract partial class MonthViewModel : ObservableObject
     Task AddTransaction() => OpenEditorAsync(0);
 
     [RelayCommand]
-    Task EditTransaction(TransactionItem item) => OpenEditorAsync(item.Transaction.Id);
+    async Task EditTransaction(TransactionItem item)
+    {
+        if (!item.IsAdjustment)
+        {
+            await OpenEditorAsync(item.Transaction.Id);
+            return;
+        }
+
+        // An adjustment has no editor; it can only be undone.
+        if (await Shell.Current.DisplayAlertAsync("Balance adjustment",
+                $"{item.AmountText} to {item.AccountName} on {item.DateText}. Delete it to undo the adjustment.",
+                "Delete", "Close"))
+        {
+            await IPlatformApplication.Current!.Services.GetRequiredService<BudgetDatabase>()
+                .DeleteTransactionAsync(item.Transaction);
+            await LoadAsync();
+        }
+    }
 
     static Task OpenEditorAsync(int transactionId) =>
         Shell.Current.GoToAsync(nameof(TransactionEditPage),

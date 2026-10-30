@@ -28,6 +28,7 @@ public partial class BudgetsViewModel(BudgetDatabase database) : MonthViewModel
     {
         var categories = await database.GetCategoriesAsync();
         var transactions = await database.GetTransactionsAsync(Month, MonthEnd);
+        var carryover = await database.GetBudgetCarryoverAsync(categories, Month);
 
         var spentByCategory = transactions
             .Where(t => t.Type == TransactionType.Expense)
@@ -36,7 +37,7 @@ public partial class BudgetsViewModel(BudgetDatabase database) : MonthViewModel
 
         var budgetItems = categories
             .Where(c => c.Type == TransactionType.Expense)
-            .Select(c => new BudgetProgressItem(c, spentByCategory.GetValueOrDefault(c.Id)))
+            .Select(c => new BudgetProgressItem(c, spentByCategory.GetValueOrDefault(c.Id), carryover.GetValueOrDefault(c.Id)))
             .OrderByDescending(b => b.HasBudget)
             .ThenBy(b => b.Name);
 
@@ -48,7 +49,7 @@ public partial class BudgetsViewModel(BudgetDatabase database) : MonthViewModel
         foreach (var category in categories.Where(c => c.Type == TransactionType.Income))
             IncomeCategories.Add(category);
 
-        var totalBudget = Budgets.Sum(b => b.Category.MonthlyBudget);
+        var totalBudget = Budgets.Sum(b => b.Budget);
         var totalSpent = Budgets.Where(b => b.HasBudget).Sum(b => b.Spent);
         TotalBudgetText = Money.Format(totalBudget);
         TotalSpentText = $"{Money.Format(totalSpent)} spent in budgeted categories";

@@ -21,6 +21,10 @@ public class BudgetDatabase
         await connection.CreateTableAsync<Category>();
         await connection.CreateTableAsync<Account>();
         await connection.CreateTableAsync<Transaction>();
+        await connection.CreateTableAsync<RecurringTransaction>();
+        await connection.CreateTableAsync<TransactionTemplate>();
+        await connection.CreateTableAsync<SavingsGoal>();
+        await connection.CreateTableAsync<Debt>();
 
         if (await connection.Table<Category>().CountAsync() == 0)
             await connection.InsertAllAsync(DefaultCategories());
@@ -106,6 +110,35 @@ public class BudgetDatabase
         }
     }
 
+    // Rows of any table
+
+    public async Task<List<T>> GetAllAsync<T>() where T : IEntity, new()
+    {
+        var db = await GetConnectionAsync();
+        return await db.Table<T>().ToListAsync();
+    }
+
+    public async Task<T?> GetAsync<T>(int id) where T : class, IEntity, new()
+    {
+        var db = await GetConnectionAsync();
+        return await db.FindAsync<T>(id);
+    }
+
+    public async Task SaveAsync<T>(T item) where T : IEntity, new()
+    {
+        var db = await GetConnectionAsync();
+        if (item.Id == 0)
+            await db.InsertAsync(item);
+        else
+            await db.UpdateAsync(item);
+    }
+
+    public async Task DeleteAsync<T>(T item) where T : IEntity, new()
+    {
+        var db = await GetConnectionAsync();
+        await db.DeleteAsync(item);
+    }
+
     // Categories
 
     public async Task<List<Category>> GetCategoriesAsync()
@@ -135,10 +168,13 @@ public class BudgetDatabase
             await db.UpdateAsync(category);
     }
 
+    /// <summary>Whether transactions, recurring transactions or templates use the category.</summary>
     public async Task<bool> IsCategoryInUseAsync(int categoryId)
     {
         var db = await GetConnectionAsync();
-        return await db.Table<Transaction>().Where(t => t.CategoryId == categoryId).CountAsync() > 0;
+        return await db.Table<Transaction>().Where(t => t.CategoryId == categoryId).CountAsync() > 0
+            || await db.Table<RecurringTransaction>().Where(r => r.CategoryId == categoryId).CountAsync() > 0
+            || await db.Table<TransactionTemplate>().Where(t => t.CategoryId == categoryId).CountAsync() > 0;
     }
 
     public async Task DeleteCategoryAsync(Category category)
@@ -170,11 +206,17 @@ public class BudgetDatabase
             await db.UpdateAsync(account);
     }
 
+    /// <summary>Whether transactions, recurring transactions, templates or savings goals use the account.</summary>
     public async Task<bool> IsAccountInUseAsync(int accountId)
     {
         var db = await GetConnectionAsync();
         return await db.Table<Transaction>()
-            .Where(t => t.AccountId == accountId || t.ToAccountId == accountId).CountAsync() > 0;
+                .Where(t => t.AccountId == accountId || t.ToAccountId == accountId).CountAsync() > 0
+            || await db.Table<RecurringTransaction>()
+                .Where(r => r.AccountId == accountId || r.ToAccountId == accountId).CountAsync() > 0
+            || await db.Table<TransactionTemplate>()
+                .Where(t => t.AccountId == accountId || t.ToAccountId == accountId).CountAsync() > 0
+            || await db.Table<SavingsGoal>().Where(g => g.AccountId == accountId).CountAsync() > 0;
     }
 
     public async Task DeleteAccountAsync(Account account)
@@ -185,19 +227,26 @@ public class BudgetDatabase
 
     /// <summary>
     /// All-time net movement per account (excluding starting balances): income in, expenses out,
-    /// transfers out of the source account and into the destination.
+    /// transfers out of the source account and into the destination, adjustments by their signed amount.
     /// </summary>
     public async Task<Dictionary<int, decimal>> GetAccountNetTotalsAsync()
     {
         var db = await GetConnectionAsync();
         var rows = await db.QueryAsync<AccountTotal>(
-            "SELECT AccountId, SUM(CASE WHEN Type = ? THEN Amount ELSE -Amount END) AS Total " +
+            "SELECT AccountId, SUM(CASE WHEN Type IN (?, ?) THEN Amount ELSE -Amount END) AS Total " +
             "FROM \"Transaction\" GROUP BY AccountId " +
             "UNION ALL " +
             "SELECT ToAccountId AS AccountId, SUM(Amount) AS Total " +
             "FROM \"Transaction\" WHERE Type = ? GROUP BY ToAccountId",
-            (int)TransactionType.Income, (int)TransactionType.Transfer);
+            (int)TransactionType.Income, (int)TransactionType.Adjustment, (int)TransactionType.Transfer);
         return rows.GroupBy(r => r.AccountId).ToDictionary(g => g.Key, g => g.Sum(r => r.Total));
+    }
+
+    /// <summary>Current balance of every account, keyed by id.</summary>
+    public async Task<Dictionary<int, decimal>> GetAccountBalancesAsync()
+    {
+        var netTotals = await GetAccountNetTotalsAsync();
+        return (await GetAccountsAsync()).ToDictionary(a => a.Id, a => a.StartingBalance + netTotals.GetValueOrDefault(a.Id));
     }
 
     class AccountTotal
@@ -214,6 +263,12 @@ public class BudgetDatabase
         return await db.Table<Transaction>().Where(t => t.Id == id).FirstOrDefaultAsync();
     }
 
+    public async Task<List<Transaction>> GetAllTransactionsAsync()
+    {
+        var db = await GetConnectionAsync();
+        return await db.Table<Transaction>().OrderBy(t => t.Date).ThenBy(t => t.Id).ToListAsync();
+    }
+
     public async Task<List<Transaction>> GetTransactionsAsync(DateTime from, DateTime toExclusive)
     {
         var db = await GetConnectionAsync();
@@ -222,6 +277,27 @@ public class BudgetDatabase
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.Id)
             .ToListAsync();
+    }
+
+    /// <summary>Budget carried into <paramref name="month"/> for each category with rollover on.</summary>
+    public async Task<Dictionary<int, decimal>> GetBudgetCarryoverAsync(IEnumerable<Category> categories, DateTime month)
+    {
+        var rollover = categories
+            .Where(c => c.RolloverSince is not null && c.MonthlyBudget > 0 && c.RolloverSince < month)
+            .ToList();
+        if (rollover.Count == 0)
+            return [];
+
+        var since = BudgetMath.FirstOfMonth(rollover.Min(c => c.RolloverSince!.Value));
+        var spent = (await GetTransactionsAsync(since, month))
+            .Where(t => t.Type == TransactionType.Expense)
+            .GroupBy(t => t.CategoryId)
+            .ToDictionary(g => g.Key, g => g
+                .GroupBy(t => BudgetMath.FirstOfMonth(t.Date))
+                .ToDictionary(m => m.Key, m => m.Sum(t => t.Amount)));
+
+        return rollover.ToDictionary(c => c.Id, c => BudgetMath.Carryover(
+            c.MonthlyBudget, c.RolloverSince!.Value, spent.GetValueOrDefault(c.Id) ?? [], month));
     }
 
     public async Task SaveTransactionAsync(Transaction transaction)
@@ -237,5 +313,44 @@ public class BudgetDatabase
     {
         var db = await GetConnectionAsync();
         await db.DeleteAsync(transaction);
+    }
+
+    // Backup
+
+    public async Task<Backup> GetBackupAsync() => new()
+    {
+        ExportedAt = DateTime.Now,
+        Categories = await GetCategoriesAsync(),
+        Accounts = await GetAccountsAsync(),
+        Transactions = await GetAllTransactionsAsync(),
+        RecurringTransactions = await GetAllAsync<RecurringTransaction>(),
+        Templates = await GetAllAsync<TransactionTemplate>(),
+        SavingsGoals = await GetAllAsync<SavingsGoal>(),
+        Debts = await GetAllAsync<Debt>(),
+    };
+
+    /// <summary>Deletes all data and inserts the backup's rows, keeping their ids so references between them hold.</summary>
+    public async Task RestoreAsync(Backup backup)
+    {
+        var db = await GetConnectionAsync();
+        await db.RunInTransactionAsync(conn =>
+        {
+            conn.DeleteAll<Transaction>();
+            conn.DeleteAll<RecurringTransaction>();
+            conn.DeleteAll<TransactionTemplate>();
+            conn.DeleteAll<SavingsGoal>();
+            conn.DeleteAll<Debt>();
+            conn.DeleteAll<Account>();
+            conn.DeleteAll<Category>();
+
+            // "OR REPLACE" makes sqlite-net write the AutoIncrement Id instead of assigning a new one.
+            conn.InsertAll(backup.Categories, "OR REPLACE", runInTransaction: false);
+            conn.InsertAll(backup.Accounts, "OR REPLACE", runInTransaction: false);
+            conn.InsertAll(backup.Transactions, "OR REPLACE", runInTransaction: false);
+            conn.InsertAll(backup.RecurringTransactions, "OR REPLACE", runInTransaction: false);
+            conn.InsertAll(backup.Templates, "OR REPLACE", runInTransaction: false);
+            conn.InsertAll(backup.SavingsGoals, "OR REPLACE", runInTransaction: false);
+            conn.InsertAll(backup.Debts, "OR REPLACE", runInTransaction: false);
+        });
     }
 }

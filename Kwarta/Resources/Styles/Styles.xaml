@@ -467,12 +467,6 @@
         <Setter Property="VerticalTextAlignment" Value="Center" />
     </Style>
 
-    <Style TargetType="Label" x:Key="PageTitle">
-        <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="28" />
-        <Setter Property="SemanticProperties.HeadingLevel" Value="Level1" />
-    </Style>
-
     <Style TargetType="Label" x:Key="SectionTitle">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
         <Setter Property="FontSize" Value="17" />

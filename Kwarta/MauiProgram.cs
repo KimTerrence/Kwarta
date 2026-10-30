@@ -20,6 +20,9 @@ namespace Kwarta
                 });
 
             builder.Services.AddSingleton<BudgetDatabase>();
+            builder.Services.AddSingleton<BackupService>();
+            builder.Services.AddSingleton<RecurringService>();
+            builder.Services.AddSingleton<AppLock>();
 
             builder.Services.AddTransient<DashboardViewModel>();
             builder.Services.AddTransient<DashboardPage>();
@@ -35,6 +38,28 @@ namespace Kwarta
             builder.Services.AddTransient<AccountsPage>();
             builder.Services.AddTransient<AccountEditViewModel>();
             builder.Services.AddTransient<AccountEditPage>();
+            builder.Services.AddTransient<MoreViewModel>();
+            builder.Services.AddTransient<MorePage>();
+            builder.Services.AddTransient<ReportsViewModel>();
+            builder.Services.AddTransient<ReportsPage>();
+            builder.Services.AddTransient<RecurringListViewModel>();
+            builder.Services.AddTransient<RecurringPage>();
+            builder.Services.AddTransient<TemplatesViewModel>();
+            builder.Services.AddTransient<TemplatesPage>();
+            builder.Services.AddTransient<GoalsViewModel>();
+            builder.Services.AddTransient<GoalsPage>();
+            builder.Services.AddTransient<GoalEditViewModel>();
+            builder.Services.AddTransient<GoalEditPage>();
+            builder.Services.AddTransient<DebtsViewModel>();
+            builder.Services.AddTransient<DebtsPage>();
+            builder.Services.AddTransient<DebtEditViewModel>();
+            builder.Services.AddTransient<DebtEditPage>();
+            builder.Services.AddTransient<BackupViewModel>();
+            builder.Services.AddTransient<BackupPage>();
+            builder.Services.AddTransient<SecurityViewModel>();
+            builder.Services.AddTransient<SecurityPage>();
+            builder.Services.AddTransient<LockViewModel>();
+            builder.Services.AddTransient<LockPage>();
 
 #if ANDROID
             // Inputs sit inside cards, so drop Android's default underline.

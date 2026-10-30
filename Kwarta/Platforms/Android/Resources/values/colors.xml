@@ -4,4 +4,6 @@
     <!-- Status bar: matches the page background so pushed pages don't get a colored band. -->
     <color name="colorPrimaryDark">#F2F5F3</color>
     <color name="colorAccent">#1B7F5B</color>
+    <!-- Matches the app icon and SplashPage. -->
+    <color name="splash_background">#25543D</color>
 </resources>

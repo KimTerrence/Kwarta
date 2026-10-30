@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Kwarta.ViewModels"
+             xmlns:views="clr-namespace:Kwarta.Views"
+             xmlns:services="clr-namespace:Kwarta.Services"
+             x:Class="Kwarta.Views.BackupPage"
+             x:DataType="vm:BackupViewModel"
+             Shell.TabBarIsVisible="False"
+             Title="Backup &amp; export">
+
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="20,12,20,32" Spacing="14" MaximumWidthRequest="720">
+
+                <Label Text="{Binding LastBackupText}" Style="{StaticResource Caption}" Margin="4,0" />
+
+                <!-- Manual backup -->
+                <Border Style="{StaticResource Card}" Padding="16,4">
+                    <VerticalStackLayout>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="0,10">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ExportCommand}" />
+                            </Grid.GestureRecognizers>
+                            <Border Style="{StaticResource IconBubble}" BackgroundColor="#291B7F5B">
+                                <Label Text="{x:Static services:Icons.Backup}" Style="{StaticResource Icon}" TextColor="{StaticResource Primary}" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                <Label Text="Export backup" FontFamily="OpenSansSemibold" FontSize="15" />
+                                <Label Text="Everything in Kwarta, as a file you can restore later" Style="{StaticResource Caption}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="0,10">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ImportCommand}" />
+                            </Grid.GestureRecognizers>
+                            <Border Style="{StaticResource IconBubble}" BackgroundColor="#291E88E5">
+                                <Label Text="{x:Static services:Icons.Folder}" Style="{StaticResource Icon}" TextColor="{StaticResource Transfer}" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                <Label Text="Import backup" FontFamily="OpenSansSemibold" FontSize="15" />
+                                <Label Text="Replaces all current data with a backup file" Style="{StaticResource Caption}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14" Padding="0,10">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ExportCsvCommand}" />
+                            </Grid.GestureRecognizers>
+                            <Border Style="{StaticResource IconBubble}" BackgroundColor="#2943A047">
+                                <Label Text="{x:Static services:Icons.TableView}" Style="{StaticResource Icon}" TextColor="{StaticResource Income}" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                <Label Text="Export to spreadsheet (CSV)" FontFamily="OpenSansSemibold" FontSize="15" />
+                                <Label Text="All transactions, for Excel or Google Sheets" Style="{StaticResource Caption}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Automatic backup -->
+                <Label Text="Automatic backup" Style="{StaticResource SectionTitle}" />
+                <Label Text="{Binding AutoBackupHint}" Style="{StaticResource Caption}" Margin="4,-6,4,0" />
+                <views:PillGroupView BindingContext="{Binding Frequency}" />
+
+                <Border Style="{StaticResource Card}" Padding="16,12" IsVisible="{Binding CanChooseFolder}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout VerticalOptions="Center" Spacing="2">
+                            <Label Text="Folder" Style="{StaticResource Caption}" />
+                            <Label Text="{Binding FolderText}" FontSize="14" LineBreakMode="MiddleTruncation" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="Choose" Style="{StaticResource SecondaryButton}" VerticalOptions="Center"
+                                Command="{Binding ChooseFolderCommand}" />
+                    </Grid>
+                </Border>
+
+                <Label Text="{Binding AutoStatusText}" TextColor="{Binding AutoStatusColor}" FontSize="12" Margin="4,0"
+                       IsVisible="{Binding IsAutoBackupOn}" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}"
+                           HorizontalOptions="Center" VerticalOptions="Center" Color="{StaticResource Primary}" />
+    </Grid>
+</ContentPage>

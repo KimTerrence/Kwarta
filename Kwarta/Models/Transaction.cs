@@ -2,11 +2,12 @@ using SQLite;
 
 namespace Kwarta.Models;
 
-public class Transaction
+public class Transaction : IEntity, ITransactionFields
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
 
+    /// <summary>Positive, except for an <see cref="TransactionType.Adjustment"/>, which is signed.</summary>
     public decimal Amount { get; set; }
 
     public TransactionType Type { get; set; } = TransactionType.Expense;

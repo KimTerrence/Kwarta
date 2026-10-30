@@ -11,10 +11,14 @@ public class TransactionItem(Transaction transaction, Category? category, Accoun
     public bool IsIncome => Transaction.Type == TransactionType.Income;
     public bool IsExpense => Transaction.Type == TransactionType.Expense;
     public bool IsTransfer => Transaction.Type == TransactionType.Transfer;
+    public bool IsAdjustment => Transaction.Type == TransactionType.Adjustment;
 
-    public string CategoryName => IsTransfer ? "Transfer" : category?.Name ?? "Uncategorized";
-    public string Glyph => IsTransfer ? Icons.SwapHoriz : category?.Glyph ?? Icons.CategoryGlyph(null);
-    public Color IconColor => IsTransfer ? AppColors.Transfer : category?.Color ?? AppColors.Muted;
+    public string CategoryName => IsTransfer ? "Transfer" : IsAdjustment ? "Balance adjustment"
+        : category?.Name ?? "Uncategorized";
+    public string Glyph => IsTransfer ? Icons.SwapHoriz : IsAdjustment ? Icons.Tune
+        : category?.Glyph ?? Icons.CategoryGlyph(null);
+    public Color IconColor => IsTransfer ? AppColors.Transfer : IsAdjustment ? AppColors.Muted
+        : category?.Color ?? AppColors.Muted;
     public Color IconTint => IconColor.WithAlpha(0.16f);
     public string AccountName => account?.Name ?? "No account";
     public string ToAccountName => toAccount?.Name ?? "No account";
@@ -34,11 +38,17 @@ public class TransactionItem(Transaction transaction, Category? category, Accoun
 
     public string DateText => Transaction.Date.ToString("MMM d, yyyy");
 
-    /// <summary>Effect on the overall balance. Transfers only move money between accounts, so they net to zero.</summary>
+    /// <summary>
+    /// Effect on income minus spending. Transfers only move money between accounts and adjustments only
+    /// correct a balance, so neither counts.
+    /// </summary>
     public decimal SignedAmount => IsIncome ? Transaction.Amount : IsExpense ? -Transaction.Amount : 0;
 
-    public string AmountText => (IsIncome ? "+" : IsExpense ? "-" : "") + Money.Format(Transaction.Amount);
-    public Color AmountColor => IsIncome ? AppColors.Income : IsExpense ? AppColors.Expense : AppColors.Transfer;
+    public string AmountText => IsAdjustment
+        ? (Transaction.Amount >= 0 ? "+" : "") + Money.Format(Transaction.Amount)
+        : (IsIncome ? "+" : IsExpense ? "-" : "") + Money.Format(Transaction.Amount);
+    public Color AmountColor => IsIncome ? AppColors.Income : IsExpense ? AppColors.Expense
+        : IsAdjustment ? AppColors.Muted : AppColors.Transfer;
 }
 
 /// <summary>Header row shown above the transactions of one day.</summary>
@@ -46,7 +56,8 @@ public class TransactionDayHeader(DateTime date, decimal net)
 {
     public string Title { get; } = date.Date == DateTime.Today ? "Today"
         : date.Date == DateTime.Today.AddDays(-1) ? "Yesterday"
-        : date.ToString("dddd, MMM d");
+        : date.Year == DateTime.Today.Year ? date.ToString("dddd, MMM d")
+        : date.ToString("ddd, MMM d, yyyy");
 
     public string TotalText { get; } = Money.Format(net);
 }

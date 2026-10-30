@@ -35,6 +35,9 @@ public partial class AccountEditViewModel(BudgetDatabase database) : ObservableO
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string ErrorText { get; set; } = string.Empty;
 
+    [ObservableProperty]
+    public partial string BalanceText { get; set; } = string.Empty;
+
     public string Title => IsExisting ? "Edit Account" : "New Account";
     public string Glyph => Icons.AccountGlyph(Type);
     public Color Tint => Color.WithAlpha(0.16f);
@@ -55,6 +58,7 @@ public partial class AccountEditViewModel(BudgetDatabase database) : ObservableO
         {
             _account = existing;
             IsExisting = true;
+            BalanceText = Money.Format(await GetBalanceAsync());
         }
         else
         {
@@ -112,6 +116,42 @@ public partial class AccountEditViewModel(BudgetDatabase database) : ObservableO
 
         await database.SaveAccountAsync(_account);
         await Shell.Current.GoToAsync("..");
+    }
+
+    async Task<decimal> GetBalanceAsync() =>
+        (await database.GetAccountBalancesAsync()).GetValueOrDefault(_account.Id);
+
+    /// <summary>Records an adjustment so the balance matches what the bank or wallet actually shows.</summary>
+    [RelayCommand]
+    async Task AdjustBalance()
+    {
+        if (!IsExisting)
+            return;
+
+        var current = await GetBalanceAsync();
+        var text = await Shell.Current.DisplayPromptAsync("Adjust balance",
+            $"Kwarta shows {Money.Format(current)}. Enter the actual balance of {_account.Name}.",
+            "Adjust", "Cancel", initialValue: current.ToString("0.##"), keyboard: Keyboard.Numeric);
+        if (text is null)
+            return;
+        if (!Money.TryParse(text, out var actual))
+        {
+            await Shell.Current.DisplayAlertAsync("Adjust balance", "Enter a valid amount.", "OK");
+            return;
+        }
+
+        var difference = Math.Round(actual - current, 2);
+        if (difference == 0)
+            return;
+
+        await database.SaveTransactionAsync(new Transaction
+        {
+            Type = TransactionType.Adjustment,
+            Amount = difference,
+            AccountId = _account.Id,
+            Date = DateTime.Today,
+        });
+        BalanceText = Money.Format(await GetBalanceAsync());
     }
 
     [RelayCommand]
