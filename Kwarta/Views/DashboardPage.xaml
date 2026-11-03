@@ -47,9 +47,19 @@
 
                     <VerticalStackLayout Spacing="14">
                         <VerticalStackLayout Spacing="2">
-                            <Label Text="Balance this month" TextColor="#CCFFFFFF" FontSize="13" />
-                            <Label Text="{Binding BalanceText}" TextColor="White"
-                                   FontFamily="OpenSansSemibold" FontSize="48" />
+                            <Label Text="Total balance" TextColor="#CCFFFFFF" FontSize="13" />
+                            <Label Text="{Binding TotalBalanceText}" TextColor="White"
+                                   FontFamily="OpenSansSemibold" FontSize="48" LineBreakMode="TailTruncation" />
+                            <Label TextColor="#CCFFFFFF" FontSize="13">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="This month " />
+                                        <Span Text="{Binding BalanceText}" TextColor="White" FontFamily="OpenSansSemibold" />
+                                        <Span Text="  ·  Carried over " />
+                                        <Span Text="{Binding CarriedOverText}" TextColor="White" FontFamily="OpenSansSemibold" />
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
                             <Border IsVisible="{Binding IsOverspent}" HorizontalOptions="Start"
                                     StrokeThickness="0" StrokeShape="RoundRectangle 10" Padding="10,4"
                                     BackgroundColor="#33FFFFFF">

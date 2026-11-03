@@ -249,6 +249,21 @@ public class BudgetDatabase
         return (await GetAccountsAsync()).ToDictionary(a => a.Id, a => a.StartingBalance + netTotals.GetValueOrDefault(a.Id));
     }
 
+    /// <summary>
+    /// Combined balance of all accounts at the end of the day before <paramref name="toExclusive"/>: starting
+    /// balances plus every earlier income, expense and adjustment. Transfers cancel out across accounts.
+    /// </summary>
+    public async Task<decimal> GetTotalBalanceAsync(DateTime toExclusive)
+    {
+        var db = await GetConnectionAsync();
+        var rows = await db.QueryAsync<AccountTotal>(
+            "SELECT 0 AS AccountId, SUM(CASE WHEN Type = ? THEN -Amount WHEN Type IN (?, ?) THEN Amount ELSE 0 END) AS Total " +
+            "FROM \"Transaction\" WHERE Date < ?",
+            (int)TransactionType.Expense, (int)TransactionType.Income, (int)TransactionType.Adjustment, toExclusive);
+        var starting = (await GetAccountsAsync()).Sum(a => a.StartingBalance);
+        return starting + rows.Sum(r => r.Total);
+    }
+
     class AccountTotal
     {
         public int AccountId { get; set; }

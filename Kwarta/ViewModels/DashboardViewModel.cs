@@ -28,6 +28,14 @@ public partial class DashboardViewModel(BudgetDatabase database, RecurringServic
     [ObservableProperty]
     public partial string BalanceText { get; set; } = Money.Format(0);
 
+    /// <summary>All accounts combined as of the end of the month, so earlier months carry forward.</summary>
+    [ObservableProperty]
+    public partial string TotalBalanceText { get; set; } = Money.Format(0);
+
+    /// <summary>What the month started with, carried over from earlier months.</summary>
+    [ObservableProperty]
+    public partial string CarriedOverText { get; set; } = Money.Format(0);
+
     [ObservableProperty]
     public partial bool IsOverspent { get; set; }
 
@@ -148,8 +156,14 @@ public partial class DashboardViewModel(BudgetDatabase database, RecurringServic
 
         IncomeText = Money.Format(income);
         ExpensesText = Money.Format(expenses);
-        BalanceText = Money.Format(balance);
+        BalanceText = (balance > 0 ? "+" : string.Empty) + Money.Format(balance);
         IsOverspent = balance < 0;
+
+        // Adjustments aren't income or spending, but they do move the month's closing total.
+        var adjustments = transactions.Where(t => t.Type == TransactionType.Adjustment).Sum(t => t.Amount);
+        var total = await database.GetTotalBalanceAsync(MonthEnd);
+        TotalBalanceText = Money.Format(total);
+        CarriedOverText = Money.Format(total - balance - adjustments);
 
         var spentByCategory = transactions
             .Where(t => t.Type == TransactionType.Expense)
